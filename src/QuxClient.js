@@ -1,5 +1,5 @@
 /**
- * The Quant-UX API for agents (/rest/ai/v2, see AIRest in the backend),
+ * The Quant-UX API for agents (/rest/ai, see AIRest in the backend),
  * called with the token of the request (the MCP client renews it itself).
  */
 export class AuthError extends Error {
@@ -34,19 +34,19 @@ export class QuxClient {
   }
 
   me () {
-    return this.get('/rest/ai/v2/me.json')
+    return this.get('/rest/ai/me.json')
   }
 
   listApps () {
-    return this.get('/rest/ai/v2/apps.json')
+    return this.get('/rest/ai/apps.json')
   }
 
   listScreens (appId) {
-    return this.get(`/rest/ai/v2/apps/${encodeURIComponent(appId)}/screens.json`)
+    return this.get(`/rest/ai/apps/${encodeURIComponent(appId)}/screens.json`)
   }
 
   getDesignTokens (appId) {
-    return this.get(`/rest/ai/v2/apps/${encodeURIComponent(appId)}/designtokens.json`)
+    return this.get(`/rest/ai/apps/${encodeURIComponent(appId)}/designtokens.json`)
   }
 
   async getApp (appId) {
@@ -54,7 +54,7 @@ export class QuxClient {
     if (cached && Date.now() - cached.at < APP_CACHE_MS) {
       return cached.app
     }
-    const app = await this.get(`/rest/ai/v2/apps/${encodeURIComponent(appId)}.json`)
+    const app = await this.get(`/rest/ai/apps/${encodeURIComponent(appId)}.json`)
     if (!app.id) {
       app.id = app._id || appId
     }

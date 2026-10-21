@@ -138,7 +138,7 @@ async function main () {
   const list = await api('GET', '/rest/agent-tokens.json', null, jwt)
   check(list.json.length === 1 && list.json[0].name === 'E2E Agent', 'the agent is listed in My account')
   await api('DELETE', `/rest/agent-tokens/${list.json[0].id}.json`, null, jwt)
-  const me = await fetch(`${API}/rest/ai/v2/me.json`, { headers: { Authorization: `Bearer ${provider.store.tokens.access_token}` } })
+  const me = await fetch(`${API}/rest/ai/me.json`, { headers: { Authorization: `Bearer ${provider.store.tokens.access_token}` } })
   check(me.status === 401, 'disconnected agent is rejected')
 
   console.log('\nAll checks passed')

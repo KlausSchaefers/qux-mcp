@@ -37,11 +37,11 @@ before(async () => {
       return
     }
     const send = body => res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(body))
-    if (req.url === '/rest/ai/v2/me.json') {
+    if (req.url === '/rest/ai/me.json') {
       send(me)
-    } else if (req.url === '/rest/ai/v2/apps.json') {
+    } else if (req.url === '/rest/ai/apps.json') {
       send([{ id: 'a1', name: 'Demo Banking', screenCount: Object.keys(demo.screens).length, type: 'smartphone', permission: 'owner', lastUpdate: 1 }])
-    } else if (req.url === '/rest/ai/v2/apps/a1.json') {
+    } else if (req.url === '/rest/ai/apps/a1.json') {
       send({ ...demo, id: 'a1', name: 'Demo Banking' })
     } else if (req.url === '/rest/images/a1/photo123.png') {
       res.writeHead(200, { 'Content-Type': 'image/png' }).end(PNG)

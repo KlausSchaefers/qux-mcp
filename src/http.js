@@ -75,7 +75,7 @@ export function startHttpServer (env = process.env) {
     if (cached && Date.now() - cached.at < TOKEN_CACHE_MS) {
       return cached.me
     }
-    const res = await fetch(`${apiUrl}/rest/ai/v2/me.json`, {
+    const res = await fetch(`${apiUrl}/rest/ai/me.json`, {
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' }
     })
     if (res.status !== 200) {

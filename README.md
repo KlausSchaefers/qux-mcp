@@ -97,7 +97,7 @@ The first line of `vendor/headless.js` names the quant-ux commit it was built fr
 ## How it fits together
 
 ```
-agent ──/mcp──► frontend proxy ──► MCP server ──/rest/ai/v2 (Bearer)──► backend (resource + authorization server)
+agent ──/mcp──► frontend proxy ──► MCP server ──/rest/ai (Bearer)──► backend (resource + authorization server)
   │                                                                       ├─ /oauth/* (register, authorize, token)
   └── browser ──► /#/agent/authorize.html ────────────────────────────────┘  agenttoken: sha256 only, apps, expiry
 ```
@@ -112,7 +112,7 @@ agent ──/mcp──► frontend proxy ──► MCP server ──/rest/ai/v2 
 
 ## Add a tool
 
-1. The data comes from `/rest/ai/v2` of the backend: add a method to `src/QuxClient.js`
+1. The data comes from `/rest/ai` of the backend: add a method to `src/QuxClient.js`
    (and the route to the backend if it is new).
 2. Register the tool in `src/tools.js`. Tools are read only (`readOnlyHint`) while
    the token scope is `apps:read`; a tool that writes needs a new scope in the
