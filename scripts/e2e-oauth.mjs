@@ -124,7 +124,7 @@ async function main () {
   client = new Client({ name: 'e2e', version: '1.0.0' })
   await client.connect(transport)
   const { tools } = await client.listTools()
-  check(tools.length === 7 && tools.some(t => t.name === 'get_image'), 'tools listed')
+  check(tools.length === 5 && tools.some(t => t.name === 'get_image'), 'tools listed')
 
   const apps = await client.callTool({ name: 'list_apps', arguments: {} })
   check(apps.content[0].text.includes('E2E Shop'), 'list_apps sees the app of the user')

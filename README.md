@@ -31,10 +31,8 @@ claude mcp add --transport http quant-ux https://mcp.quant-ux.com/mcp --header "
 | `list_apps` | Find the app the user means |
 | `get_app_overview` | Screens, start screen, links between screens, design system summary |
 | `get_design_tokens` | Tokens as `css` (variables + text classes), `json` (role, usage, value) or `prompt` (rules) |
-| `get_screen_html` | One screen as self contained HTML, `data-qid` on every element |
-| `get_components` | Element kinds, variants, tokens and the style of each state |
+| `get_screen_handoff` | Everything to build one screen: rules, components and their states, images, links and the HTML (`data-qid` on every element) |
 | `get_image` | An image of a screen, as image content (and a download link) |
-| `get_screen_handoff` | All of the above for one screen, in one call |
 
 Apps and screens are given by id or by name.
 

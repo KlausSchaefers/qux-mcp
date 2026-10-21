@@ -105,7 +105,7 @@ test('lists the read only tools', async () => {
   const client = await connect('qux_at_good')
   const { tools } = await client.listTools()
   const names = tools.map(t => t.name).sort()
-  assert.deepEqual(names, ['get_app_overview', 'get_components', 'get_design_tokens', 'get_image', 'get_screen_handoff', 'get_screen_html', 'list_apps'])
+  assert.deepEqual(names, ['get_app_overview', 'get_design_tokens', 'get_image', 'get_screen_handoff', 'list_apps'])
   assert.ok(tools.every(t => t.annotations.readOnlyHint === true))
   await client.close()
 })
@@ -129,11 +129,11 @@ test('the tools read the app by name', async () => {
   const tokens = await client.callTool({ name: 'get_design_tokens', arguments: { app: 'a1', format: 'json' } })
   assert.ok(Array.isArray(tokens.structuredContent.tokens))
 
-  const missing = await client.callTool({ name: 'get_screen_html', arguments: { app: 'a1', screen: 'Nope' } })
+  const missing = await client.callTool({ name: 'get_screen_handoff', arguments: { app: 'a1', screen: 'Nope' } })
   assert.equal(missing.isError, true)
   assert.match(missing.content[0].text, /The screens are:/)
 
-  const noApp = await client.callTool({ name: 'get_components', arguments: { app: 'Unknown' } })
+  const noApp = await client.callTool({ name: 'get_app_overview', arguments: { app: 'Unknown' } })
   assert.equal(noApp.isError, true)
   assert.match(noApp.content[0].text, /No app "Unknown"/)
 

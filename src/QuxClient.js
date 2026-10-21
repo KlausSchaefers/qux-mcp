@@ -17,9 +17,6 @@ export class ApiError extends Error {
   }
 }
 
-// a full app can be big, so it is kept a few seconds for the next tool call
-const APP_CACHE_MS = 30 * 1000
-
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024
 
 export class QuxClient {
@@ -30,7 +27,6 @@ export class QuxClient {
   constructor ({ apiUrl, getToken }) {
     this.apiUrl = apiUrl.replace(/\/+$/, '')
     this.getToken = getToken
-    this.appCache = new Map()
   }
 
   me () {
@@ -41,24 +37,11 @@ export class QuxClient {
     return this.get('/rest/ai/apps.json')
   }
 
-  listScreens (appId) {
-    return this.get(`/rest/ai/apps/${encodeURIComponent(appId)}/screens.json`)
-  }
-
-  getDesignTokens (appId) {
-    return this.get(`/rest/ai/apps/${encodeURIComponent(appId)}/designtokens.json`)
-  }
-
   async getApp (appId) {
-    const cached = this.appCache.get(appId)
-    if (cached && Date.now() - cached.at < APP_CACHE_MS) {
-      return cached.app
-    }
     const app = await this.get(`/rest/ai/apps/${encodeURIComponent(appId)}.json`)
     if (!app.id) {
       app.id = app._id || appId
     }
-    this.appCache.set(appId, { app, at: Date.now() })
     return app
   }
 

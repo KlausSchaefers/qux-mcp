@@ -116,16 +116,6 @@ export function createMcpServer ({ client, imageUrl: signImageUrl }) {
     return result(tokens)
   })
 
-  tool('get_screen_html', {
-    title: 'Screen HTML',
-    description: 'One screen as a self contained HTML document with its CSS, the design tokens as var(--...), icons and states, laid out like on the canvas. Every element has data-qid="<element id>". Use get_screen_handoff instead when you implement the screen.',
-    inputSchema: { app: appParam, screen: screenParam }
-  }, async ({ app, screen }) => {
-    const model = await loadApp(client, app)
-    const found = findScreenOrThrow(model, screen)
-    return result(clip(Handoff.getScreenHTML(model, found.id, htmlOptions)))
-  })
-
   tool('get_image', {
     title: 'Image',
     description: 'Shows an image of a screen: the picture of an element (data-qid) or an image path from get_screen_handoff. Use it to see what an image shows, or when there is no download URL.',
@@ -147,16 +137,6 @@ export function createMcpServer ({ client, imageUrl: signImageUrl }) {
       content.push({ type: 'text', text: `Download (valid 1 hour): ${url}` })
     }
     return { content }
-  })
-
-  tool('get_components', {
-    title: 'Components',
-    description: 'The components of an app: the kinds of elements (buttons, inputs, cards...) with their variants, how often each is used, their tokens and the style of each state (default, hover, focus, error). Use it to build each component once and reuse it.',
-    inputSchema: { app: appParam }
-  }, async ({ app }) => {
-    const model = await loadApp(client, app)
-    const components = Handoff.getComponents(model)
-    return result(clip(JSON.stringify(components, null, 2)), { components })
   })
 
   tool('get_screen_handoff', {
