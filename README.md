@@ -7,10 +7,10 @@ logs in by itself: the user only clicks *Allow* on a Quant-UX page.
 
 ## Connect an agent
 
-Nothing to install, the server runs with Quant-UX:
+Nothing to install, the server runs next to Quant-UX:
 
 ```sh
-claude mcp add --transport http quant-ux https://app.quant-ux.com/mcp
+claude mcp add --transport http quant-ux https://mcp.quant-ux.com/mcp
 ```
 
 The first call answers `401`. The client then discovers the login (OAuth 2.1 with
@@ -21,7 +21,7 @@ Agents that cannot log in (a script, a CI job) send a personal access token from
 *My account > Connected agents*:
 
 ```sh
-claude mcp add --transport http quant-ux https://app.quant-ux.com/mcp --header "Authorization: Bearer qux_pat_..."
+claude mcp add --transport http quant-ux https://mcp.quant-ux.com/mcp --header "Authorization: Bearer qux_pat_..."
 ```
 
 ## Tools (read only)
@@ -50,14 +50,18 @@ Or with Docker:
 
 ```sh
 docker build -t quant-ux-mcp .
-docker run -p 8090:8090 -e QUX_PUBLIC_URL=https://app.quant-ux.com -e QUX_API_URL=http://backend:8080 quant-ux-mcp
+docker run -p 8090:8090 \
+  -e QUX_PUBLIC_URL=https://mcp.quant-ux.com \
+  -e QUX_ISSUER=https://app.quant-ux.com \
+  -e QUX_API_URL=http://backend:8080 \
+  quant-ux-mcp
 ```
 
 | Env | Default | |
 |---|---|---|
-| `QUX_PUBLIC_URL` | `http://localhost:8090` | Public URL of quant-ux; the MCP endpoint is `<url>/mcp` |
-| `QUX_API_URL` | `QUX_PUBLIC_URL` | How this server reaches the backend |
-| `QUX_ISSUER` | `QUX_PUBLIC_URL` | The OAuth authorization server (the backend, via the frontend proxy) |
+| `QUX_PUBLIC_URL` | `http://localhost:8090` | Public URL of this server, e.g. `https://mcp.quant-ux.com`; the MCP endpoint is `<url>/mcp` |
+| `QUX_ISSUER` | `QUX_PUBLIC_URL` | The OAuth authorization server: quant-ux, e.g. `https://app.quant-ux.com`, which proxies `/oauth` and `/.well-known` to the backend |
+| `QUX_API_URL` | `QUX_ISSUER` | How this server reaches the backend, e.g. an internal URL |
 | `PORT` | `8090` | |
 | `QUX_ASSET_SECRET` | random per start | Key of the image download links (set it when several servers run) |
 
@@ -68,16 +72,16 @@ The server needs the three parts of Quant-UX running locally:
 | Part | Repo | Example |
 |---|---|---|
 | Backend (API + OAuth) | [matc_java](https://github.com/KlausSchaefers/matc_java) | `:8082`, with `oauth.issuer` = the frontend URL |
-| Frontend (proxy + consent page) | [quant-ux](https://github.com/KlausSchaefers/quant-ux) | `QUX_API_SERVER=http://localhost:8082 QUX_MCP_SERVER=http://localhost:8091 vue-cli-service serve --port 8085` |
-| This server | qux-mcp | `PORT=8091 QUX_PUBLIC_URL=http://localhost:8085 QUX_API_URL=http://localhost:8082 npm start` |
+| Frontend (login proxy + consent page) | [quant-ux](https://github.com/KlausSchaefers/matc_vue) | `QUX_API_SERVER=http://localhost:8082 VUE_APP_QUX_MCP_URL=http://localhost:8091/mcp vue-cli-service serve --port 8085` |
+| This server | qux-mcp | `PORT=8091 QUX_PUBLIC_URL=http://localhost:8091 QUX_ISSUER=http://localhost:8085 QUX_API_URL=http://localhost:8082 npm start` |
 
-Then `claude mcp add --transport http quant-ux http://localhost:8085/mcp`.
+Then `claude mcp add --transport http quant-ux http://localhost:8091/mcp`.
 
 `npm run e2e` runs the whole login as an MCP client against that setup. It
 creates a user and an app, so never point it at production:
 
 ```sh
-QUX_API=http://localhost:8082 MCP_URL=http://localhost:8085/mcp npm run e2e
+QUX_API=http://localhost:8082 MCP_URL=http://localhost:8091/mcp npm run e2e
 ```
 
 ## The editor code (vendor/)
@@ -97,14 +101,20 @@ The first line of `vendor/headless.js` names the quant-ux commit it was built fr
 ## How it fits together
 
 ```
-agent ──/mcp──► frontend proxy ──► MCP server ──/rest/ai (Bearer)──► backend (resource + authorization server)
-  │                                                                       ├─ /oauth/* (register, authorize, token)
-  └── browser ──► /#/agent/authorize.html ────────────────────────────────┘  agenttoken: sha256 only, apps, expiry
+agent ──/mcp──► MCP server (mcp.quant-ux.com) ──/rest/ai (Bearer)──► backend (resource + authorization server)
+  │                                                                    ▲
+  │   login (OAuth)                                                    │ /oauth/*, /.well-known (proxy)
+  └──────────────► quant-ux (app.quant-ux.com) ────────────────────────┘
+                     /#/agent/authorize.html: the user clicks Allow
 ```
 
-- The frontend server of quant-ux proxies `/mcp` and
-  `/.well-known/oauth-protected-resource/mcp` to this server (`QUX_MCP_SERVER`)
-  and `/oauth` and `/.well-known` to the backend.
+- This server runs on its own host and serves `/mcp`, its resource metadata
+  (`/.well-known/oauth-protected-resource/mcp`) and the image links (`/mcp/assets/`).
+  The metadata names quant-ux (`QUX_ISSUER`) as the authorization server.
+- quant-ux proxies `/oauth` and `/.well-known` to the backend and shows the consent
+  page and *My account > Connected agents*. It knows nothing else of this server,
+  only its URL to show it (`VUE_APP_QUX_MCP_URL`).
+- Tokens are bound to this server (RFC 8707): a token for another resource is rejected.
 - Tokens are read only: `qux_at_` (1 hour) + `qux_rt_` (60 days, rotating) from OAuth, `qux_pat_` (up to 1 year).
 - A token never grants more than the user has: the backend checks the Team ACL on every call.
   Agent tokens only reach the design routes, never the account, password, teams, app secrets or the AI proxy.

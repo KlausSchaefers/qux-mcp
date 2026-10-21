@@ -16,10 +16,11 @@ const ASSET_PREFIX = '/mcp/assets/'
  * back with a token (see OAuthREST in the backend). No setup by the user.
  *
  * Config (env):
- *   QUX_PUBLIC_URL  the URL users reach quant-ux at, e.g. https://app.quant-ux.com.
- *                   The MCP endpoint is QUX_PUBLIC_URL/mcp (the frontend server proxies it).
- *   QUX_API_URL     where this server reaches the backend, default QUX_PUBLIC_URL
- *   QUX_ISSUER      the authorization server, default QUX_PUBLIC_URL
+ *   QUX_PUBLIC_URL  the URL agents reach this server at, e.g. https://mcp.quant-ux.com.
+ *                   The MCP endpoint is QUX_PUBLIC_URL/mcp.
+ *   QUX_ISSUER      the authorization server: quant-ux, which proxies /oauth to the
+ *                   backend, e.g. https://app.quant-ux.com. Default QUX_PUBLIC_URL
+ *   QUX_API_URL     where this server reaches the backend, default QUX_ISSUER
  *   PORT            default 8090
  */
 const TOKEN_CACHE_MS = 60 * 1000
@@ -35,8 +36,8 @@ const SCOPES = ['apps:read']
 export function startHttpServer (env = process.env) {
   const port = Number(env.PORT || 8090)
   const publicUrl = trim(env.QUX_PUBLIC_URL || `http://localhost:${port}`)
-  const apiUrl = trim(env.QUX_API_URL || publicUrl)
   const issuer = trim(env.QUX_ISSUER || publicUrl)
+  const apiUrl = trim(env.QUX_API_URL || issuer)
   const resource = `${publicUrl}/mcp`
   const metadataUrl = `${publicUrl}/.well-known/oauth-protected-resource/mcp`
 
@@ -111,7 +112,7 @@ export function startHttpServer (env = process.env) {
           scopes_supported: SCOPES,
           bearer_methods_supported: ['header'],
           resource_name: 'Quant-UX',
-          resource_documentation: `${publicUrl}/#/help.html`
+          resource_documentation: `${issuer}/#/help.html`
         })
         return
       }
