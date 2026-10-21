@@ -32,7 +32,7 @@ await build({
   bundle: true,
   platform: 'node',
   format: 'esm',
-  target: 'node18',
+  target: 'node20',
   nodePaths: [appSrc],
   logLevel: 'warning',
   banner: {

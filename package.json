@@ -19,7 +19,7 @@
     "e2e": "node scripts/e2e-oauth.mjs"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.31.0",
