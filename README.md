@@ -67,7 +67,7 @@ The server needs the three parts of Quant-UX running locally:
 
 | Part | Repo | Example |
 |---|---|---|
-| Backend (API + OAuth) | [qux-java](https://github.com/KlausSchaefers/qux-java) | `:8082`, with `oauth.issuer` = the frontend URL |
+| Backend (API + OAuth) | [matc_java](https://github.com/KlausSchaefers/matc_java) | `:8082`, with `oauth.issuer` = the frontend URL |
 | Frontend (proxy + consent page) | [quant-ux](https://github.com/KlausSchaefers/quant-ux) | `QUX_API_SERVER=http://localhost:8082 QUX_MCP_SERVER=http://localhost:8091 vue-cli-service serve --port 8085` |
 | This server | qux-mcp | `PORT=8091 QUX_PUBLIC_URL=http://localhost:8085 QUX_API_URL=http://localhost:8082 npm start` |
 
