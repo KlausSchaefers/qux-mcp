@@ -119,7 +119,7 @@ test('the tools read the app by name', async () => {
   const overview = await client.callTool({ name: 'get_app_overview', arguments: { app: 'demo banking' } })
   assert.equal(overview.isError, undefined)
   assert.match(overview.content[0].text, /## Screens/)
-  assert.ok(overview.structuredContent.flows.length > 0)
+  assert.match(overview.content[0].text, /## Links \([1-9]/)
 
   const screen = Object.values(demo.screens)[0]
   const handoff = await client.callTool({ name: 'get_screen_handoff', arguments: { app: 'a1', screen: screen.name } })
@@ -127,7 +127,7 @@ test('the tools read the app by name', async () => {
   assert.match(handoff.content[0].text, /data-qid=/)
 
   const tokens = await client.callTool({ name: 'get_design_tokens', arguments: { app: 'a1', format: 'json' } })
-  assert.ok(Array.isArray(tokens.structuredContent.tokens))
+  assert.ok(Array.isArray(JSON.parse(tokens.content[0].text)))
 
   const missing = await client.callTool({ name: 'get_screen_handoff', arguments: { app: 'a1', screen: 'Nope' } })
   assert.equal(missing.isError, true)
@@ -153,11 +153,11 @@ test('the HTML for agents has tokens, icons and image links', async (t) => {
   assert.match(text, /materialdesignicons\.min\.css/)
 
   // the image as a signed link of this server
-  const image = handoff.structuredContent.images.find(i => i.elementId === 'wImg')
-  assert.ok(image.url.startsWith(`${PUBLIC_URL}/mcp/assets/`))
-  assert.match(text, new RegExp(`src="${image.url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`))
+  const url = /data-qid="wImg"\) \d+x\d+: (\S+)/.exec(text)[1]
+  assert.ok(url.startsWith(`${PUBLIC_URL}/mcp/assets/`))
+  assert.ok(text.includes(`src="${url}"`))
 
-  const local = image.url.replace(PUBLIC_URL, mcpUrl)
+  const local = url.replace(PUBLIC_URL, mcpUrl)
   const res = await fetch(local)
   assert.equal(res.status, 200)
   assert.equal(res.headers.get('content-type'), 'image/png')

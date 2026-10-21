@@ -67,7 +67,7 @@ export function createMcpServer ({ client, imageUrl: signImageUrl }) {
   }, async () => {
     const apps = await client.listApps()
     const lines = apps.map(a => `- ${a.name} (id: ${a.id}) · ${a.screenCount} screens · ${a.type || 'app'} · ${a.permission} · updated ${date(a.lastUpdate)}`)
-    return result(apps.length ? `${apps.length} apps:\n${lines.join('\n')}` : 'The user has no apps yet.', { apps })
+    return result(apps.length ? `${apps.length} apps:\n${lines.join('\n')}` : 'The user has no apps yet.')
   })
 
   tool('get_app_overview', {
@@ -94,21 +94,21 @@ export function createMcpServer ({ client, imageUrl: signImageUrl }) {
         ? `${ds.tokens} tokens: ${Object.entries(ds.byType).filter(([, n]) => n > 0).map(([t, n]) => `${n} ${t}`).join(', ')}. Get them with get_design_tokens.`
         : 'The app has no design system yet. Take the values from the HTML of the screens.'
     ].join('\n')
-    return result(text, { id: model.id, name: model.name, type: model.type, screenSize: model.screenSize, screens, flows, designSystem: ds })
+    return result(text)
   })
 
   tool('get_design_tokens', {
     title: 'Design tokens',
-    description: 'The design tokens of an app (colors with their role, text styles, radius, spacing, shadows). format=css gives CSS variables and text classes to paste, json gives the tokens with role, usage and value to map into a theme (e.g. Tailwind), prompt gives the rules to follow.',
+    description: 'The design tokens of an app (colors with their role, text styles, radius, spacing, shadows). format=css gives CSS variables and text classes to paste, json gives the tokens with role, usage and value to map into a theme (e.g. Tailwind).',
     inputSchema: {
       app: appParam,
-      format: z.enum(['css', 'json', 'prompt']).default('css').describe('css (default), json or prompt')
+      format: z.enum(['css', 'json']).default('css').describe('css (default) or json')
     }
   }, async ({ app, format = 'css' }) => {
     const model = await loadApp(client, app)
     const tokens = Handoff.getTokens(model, format)
     if (format === 'json') {
-      return result(JSON.stringify(tokens, null, 2), { tokens })
+      return result(JSON.stringify(tokens, null, 2))
     }
     if (!tokens) {
       return result(`The app "${model.name}" has no design system. Take the values from the HTML of the screens.`)
@@ -172,13 +172,7 @@ export function createMcpServer ({ client, imageUrl: signImageUrl }) {
       handoff.html,
       '```'
     ].join('\n')
-    return result(clip(text), {
-      app: handoff.app,
-      screen: handoff.screen,
-      designSystem: handoff.designSystem,
-      images: handoff.images,
-      flows: handoff.flows
-    })
+    return result(clip(text))
   })
 
   return server
@@ -198,12 +192,8 @@ function findScreenOrThrow (model, ref) {
   return screen
 }
 
-function result (text, structured) {
-  const res = { content: [{ type: 'text', text }] }
-  if (structured) {
-    res.structuredContent = structured
-  }
-  return res
+function result (text) {
+  return { content: [{ type: 'text', text }] }
 }
 
 function toError (err) {
