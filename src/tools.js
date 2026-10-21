@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
-import * as Handoff from '../vendor/headless.js'
+import * as Handoff from './handoff/DesignHandoff.js'
 import { AuthError, ApiError } from './QuxClient.js'
 
 export const SERVER_NAME = 'quant-ux'

@@ -82,19 +82,23 @@ creates a user and an app, so never point it at production:
 QUX_API=http://localhost:8082 MCP_URL=http://localhost:8091/mcp npm run e2e
 ```
 
-## The editor code (vendor/)
+## The design for agents (src/handoff) and the editor code (vendor/)
 
-The HTML and tokens an agent gets come from the same code as the editor
-(QUX2HTML, TokenMapper, DesignSystem), through `src/headless/DesignHandoff.js`
-of quant-ux. `vendor/headless.js` is that file bundled, and it is committed, so
-this server runs without the editor. When the editor code changes:
+- `src/handoff/` turns the model of an app into what an agent needs: screens,
+  links, tokens, components and the HTML of a screen (`DesignHandoff.js`).
+  `AgentHTML.js` extends the HTML of the editor with icons, design tokens as
+  `var(--...)`, states and image links; `tokens.js` names the tokens.
+- `vendor/editor.js` is the code of the editor it builds on (QUX2HTML,
+  TokenMapper, DesignSystem, see `scripts/editor-entry.js`), bundled from
+  quant-ux as it is and committed, so this server runs without the app. When
+  that code changes in the app:
 
 ```sh
 QUX_APP_SRC=../quant-ux/src npm run vendor
 npm test
 ```
 
-The first line of `vendor/headless.js` names the quant-ux commit it was built from.
+The first line of `vendor/editor.js` names the quant-ux commit it was built from.
 
 ## How it fits together
 
