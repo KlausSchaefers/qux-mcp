@@ -1,0 +1,31 @@
+{
+  "name": "quant-ux-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for Quant-UX: lets coding agents read apps, screens, design tokens and components",
+  "private": true,
+  "license": "AGPL-3.0",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KlausSchaefers/qux-mcp.git"
+  },
+  "bin": {
+    "quant-ux-mcp": "bin/quant-ux-mcp.js"
+  },
+  "scripts": {
+    "start": "node bin/quant-ux-mcp.js",
+    "test": "node --test test/*.test.js",
+    "vendor": "node scripts/vendor.mjs",
+    "e2e": "node scripts/e2e-oauth.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.31.0",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12"
+  }
+}
