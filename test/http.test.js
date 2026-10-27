@@ -80,7 +80,7 @@ test('publishes the resource metadata with the authorization server', async () =
   const metadata = await res.json()
   assert.equal(metadata.resource, `${PUBLIC_URL}/mcp`)
   assert.deepEqual(metadata.authorization_servers, [PUBLIC_URL])
-  assert.deepEqual(metadata.scopes_supported, ['apps:read'])
+  assert.deepEqual(metadata.scopes_supported, ['apps:read', 'apps:write'])
 })
 
 test('answers 401 with the metadata without a token or with a wrong one', async () => {
@@ -89,8 +89,8 @@ test('answers 401 with the metadata without a token or with a wrong one', async 
 
   const none = await fetch(`${mcpUrl}/mcp`, { method: 'POST', headers, body })
   assert.equal(none.status, 401)
-  // read only: the client asks for apps:read, not for everything it can find
-  assert.equal(none.headers.get('www-authenticate'), `Bearer resource_metadata="${PUBLIC_URL}/.well-known/oauth-protected-resource/mcp", scope="apps:read"`)
+  // the client asks for both, the user can uncheck apps:write on the consent page
+  assert.equal(none.headers.get('www-authenticate'), `Bearer resource_metadata="${PUBLIC_URL}/.well-known/oauth-protected-resource/mcp", scope="apps:read apps:write"`)
 
   const wrong = await fetch(`${mcpUrl}/mcp`, { method: 'POST', headers: { ...headers, Authorization: 'Bearer qux_at_nope' }, body })
   assert.equal(wrong.status, 401)
@@ -101,12 +101,14 @@ test('answers 401 with the metadata without a token or with a wrong one', async 
   assert.equal(other.status, 401)
 })
 
-test('lists the read only tools', async () => {
+test('lists the tools, the ones that write marked as such', async () => {
   const client = await connect('qux_at_good')
   const { tools } = await client.listTools()
   const names = tools.map(t => t.name).sort()
-  assert.deepEqual(names, ['get_app_overview', 'get_design_tokens', 'get_image', 'get_screen_handoff', 'list_apps'])
-  assert.ok(tools.every(t => t.annotations.readOnlyHint === true))
+  assert.deepEqual(names, ['create_app', 'create_screens', 'get_app_overview', 'get_design_tokens', 'get_image', 'get_screen_handoff', 'list_apps'])
+  const writing = tools.filter(t => t.annotations.readOnlyHint === false).map(t => t.name).sort()
+  assert.deepEqual(writing, ['create_app', 'create_screens'])
+  assert.ok(tools.filter(t => writing.includes(t.name)).every(t => t.annotations.destructiveHint === false))
   await client.close()
 })
 

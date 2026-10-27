@@ -4,6 +4,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { createMcpServer, SERVER_NAME, SERVER_VERSION } from './tools.js'
 import { QuxClient } from './QuxClient.js'
 import { createAssetSigner } from './assets.js'
+import { Renderer } from './create/Renderer.js'
 
 const ASSET_PREFIX = '/mcp/assets/'
 
@@ -22,16 +23,21 @@ const ASSET_PREFIX = '/mcp/assets/'
  *                   backend, e.g. https://app.quant-ux.com. Default QUX_PUBLIC_URL
  *   QUX_API_URL     where this server reaches the backend, default QUX_ISSUER
  *   PORT            default 8090
+ *   QUX_IMPORT_PAGES      screens imported at the same time (Chromium pages), default 2
+ *   QUX_CHROMIUM_PATH     a Chromium to use instead of the one of Playwright
+ *   QUX_CHROMIUM_NO_SANDBOX=true  for a container without the Chromium sandbox
  */
 const TOKEN_CACHE_MS = 60 * 1000
 
-const MAX_BODY = 1024 * 1024
+// create_screens carries HTML and images
+const MAX_BODY = 20 * 1024 * 1024
 
 /**
- * The one scope of agent tokens, which are read only (the client takes the
- * scope of the 401, else the scopes_supported).
+ * The scopes the client asks for (it takes the scope of the 401, else the
+ * scopes_supported). The user can uncheck apps:write on the consent page,
+ * then create_app and create_screens say how to allow it.
  */
-const SCOPES = ['apps:read']
+const SCOPES = ['apps:read', 'apps:write']
 
 export function startHttpServer (env = process.env) {
   const port = Number(env.PORT || 8090)
@@ -43,6 +49,8 @@ export function startHttpServer (env = process.env) {
 
   const tokens = new Map()
   const assets = createAssetSigner(env.QUX_ASSET_SECRET)
+  // one Chromium for all requests, started by the first create_screens
+  const renderer = new Renderer({ maxPages: Number(env.QUX_IMPORT_PAGES || 2) })
 
   /**
    * An image of the app as a link the agent can download without a
@@ -151,7 +159,7 @@ export function startHttpServer (env = process.env) {
        */
       const client = new QuxClient({ apiUrl, getToken: async () => token })
       const imageUrl = path => `${publicUrl}${ASSET_PREFIX}${assets.sign({ t: token, p: path })}`
-      const mcp = createMcpServer({ client, imageUrl })
+      const mcp = createMcpServer({ client, imageUrl, renderer })
       const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined })
       res.on('close', () => {
         transport.close()
@@ -168,6 +176,7 @@ export function startHttpServer (env = process.env) {
     }
   })
 
+  server.on('close', () => renderer.close())
   server.listen(port, () => {
     console.error(`quant-ux-mcp > listening on :${port}, resource ${resource}, issuer ${issuer}, api ${apiUrl}`)
   })

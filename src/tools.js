@@ -2,6 +2,8 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import * as Handoff from './handoff/DesignHandoff.js'
 import { AuthError, ApiError } from './QuxClient.js'
+import { createScreens, MAX_SCREENS } from './create/createScreens.js'
+import { toDesignTokens } from './create/tokens.js'
 
 export const SERVER_NAME = 'quant-ux'
 
@@ -22,9 +24,28 @@ How to read the HTML:
 - Icons are <i class="mdi mdi-NAME">, Material Design Icons 5.9 by name. Use that icon set, or the same icon of the icon set of the codebase.
 - State rules: :hover, :focus, :active, and .is-error for an invalid field.
 - Every element has data-qid="<element id>"; mention these ids when you talk about an element.
-- Images: get_screen_handoff lists them with a download URL when there is one; get_image shows an image.`
+- Images: get_screen_handoff lists them with a download URL when there is one; get_image shows an image.
+
+To recreate the UI of a codebase in Quant-UX (needs the user to allow "Create apps and add screens"):
+1. Find the screens: the routes, pages and views of the codebase, and the device size it is built for.
+2. Find the design tokens: the theme (Tailwind config, CSS variables, theme files) with colors, text styles, radius, spacing and shadows.
+3. create_app with the name, the screen size and the tokens. Or add to an app of list_apps.
+4. create_screens, up to ${MAX_SCREENS} screens per call: one self-contained HTML document per screen that looks like the screen does in the running app with realistic content.
+   - Inline CSS in a <style>, no JavaScript, no external CSS. Flatten the components to plain HTML; resolve conditionals to the default state.
+   - The body is the screen at the width of the app; the height grows with the content.
+   - Use the token values (CSS variables are fine), elements that use the same value are linked to the same token.
+   - Icons as inline <svg>. Images: an https URL, or a file of the codebase passed in images and used by its name (<img src="logo.png">).
+   - data-link="<screen name>" on an element makes it open that screen in the prototype.
+5. Check the result with get_screen_handoff and fix big differences with another create_screens call.`
 
 const appParam = z.string().describe('The app: its id or its name, from list_apps')
+
+const tokenParam = z.object({
+  name: z.string().describe('e.g. "Primary", "Heading", "Medium"'),
+  type: z.enum(['color', 'text', 'radius', 'spacing', 'boxShadow']),
+  role: z.string().optional().describe('color: primary, secondary, accent, background, surface, text, muted, border, success, warning, error. text: display, heading, subheading, body, label, caption'),
+  value: z.any().describe('color: "#2563eb". text: {fontFamily, fontSize, fontWeight, lineHeight, letterSpacing}. radius and spacing: a number in px. boxShadow: "0 2px 8px rgba(0,0,0,.15)"')
+})
 const screenParam = z.string().describe('The screen: its id or its name, from get_app_overview')
 
 /**
@@ -32,7 +53,7 @@ const screenParam = z.string().describe('The screen: its id or its name, from ge
  * the token of the user; imageUrl(path) gives a download link for an
  * uploaded image (the HTTP server signs one).
  */
-export function createMcpServer ({ client, imageUrl: signImageUrl }) {
+export function createMcpServer ({ client, imageUrl: signImageUrl, renderer }) {
   // one link per image, the same in the HTML and in the list of images
   const imageUrls = new Map()
   const imageUrl = signImageUrl ? (path) => {
@@ -173,6 +194,72 @@ export function createMcpServer ({ client, imageUrl: signImageUrl }) {
       '```'
     ].join('\n')
     return result(clip(text))
+  })
+
+  const writeTool = (name, config, handler) => tool(name, {
+    ...config,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false }
+  }, handler)
+
+  writeTool('create_app', {
+    title: 'Create app',
+    description: 'Creates a new, empty app (design) for the user, with the screen size and optionally the design tokens of the codebase. Then add the screens with create_screens.',
+    inputSchema: {
+      name: z.string().min(1).max(100).describe('The name of the app, e.g. the name of the product'),
+      width: z.number().int().min(100).max(5000).describe('The screen width in px: 375 for a phone, 768 for a tablet, 1440 for a desktop web app'),
+      height: z.number().int().min(100).max(5000).describe('The screen height in px (the viewport), e.g. 812 for a phone, 900 for a desktop'),
+      description: z.string().max(1000).optional(),
+      tokens: z.array(tokenParam).max(200).optional().describe('The design tokens of the codebase. The widgets of the screens are linked to the tokens with their value.')
+    }
+  }, async ({ name, width, height, description, tokens }) => {
+    const { tokens: designtokens, errors } = toDesignTokens(tokens)
+    const app = await client.createApp({ name, description, screenSize: { w: width, h: height }, designtokens })
+    const lines = [
+      `Created the app "${app.name}" (id: ${app.id}), ${app.type} ${width}x${height}, with ${Object.keys(designtokens).length} design tokens.`,
+      'Add the screens with create_screens.'
+    ]
+    if (errors.length) {
+      lines.push('', 'Tokens that were left out:', ...errors.map(e => `- ${e}`))
+    }
+    return result(lines.join('\n'))
+  })
+
+  writeTool('create_screens', {
+    title: 'Create screens',
+    description: `Adds screens to an app, made of one HTML document each. Quant-UX turns the HTML into editable elements (texts, buttons, inputs, images, groups with auto layout) with the importer of the editor, links them to the design tokens of the app and adds the links of data-link elements. Up to ${MAX_SCREENS} screens per call. See the instructions of the server for the HTML.`,
+    inputSchema: {
+      app: appParam,
+      screens: z.array(z.object({
+        name: z.string().min(1).max(80).describe('The name of the screen, e.g. "Login"'),
+        html: z.string().min(1).describe('A self-contained HTML document: inline <style>, no scripts, icons as inline <svg>'),
+        height: z.number().int().min(100).max(20000).optional().describe('The viewport height, default the one of the app. The screen grows with its content.')
+      })).min(1).max(MAX_SCREENS),
+      images: z.array(z.object({
+        name: z.string().describe('The name the HTML uses, e.g. "logo.png" in <img src="logo.png">'),
+        data: z.string().describe('The file, base64'),
+        mimeType: z.string().optional().describe('image/png, image/jpeg, image/gif, image/webp or image/svg+xml')
+      })).max(50).optional().describe('Image files of the codebase the screens show')
+    }
+  }, async ({ app, screens, images }) => {
+    if (!renderer) {
+      throw new ApiError(503, 'This server cannot create screens, it has no browser to import the HTML')
+    }
+    const res = await createScreens({ client, renderer, app, screens, images })
+    const lines = [
+      `Added ${res.screens.length} screens to "${res.app.name}" (id: ${res.app.id}):`,
+      ...res.screens.map(s => `- ${s.name} (id: ${s.id}): ${s.widgets} elements${s.warnings.length ? '\n' + s.warnings.map(w => `  ! ${w}`).join('\n') : ''}`)
+    ]
+    if (res.tokens.length) {
+      lines.push('', `New design tokens: ${res.tokens.map(t => `${t.name} (${t.type})`).join(', ')}`)
+    }
+    if (res.images) {
+      lines.push('', `Uploaded ${res.images} images.`)
+    }
+    if (res.warnings.length) {
+      lines.push('', 'Warnings:', ...res.warnings.map(w => `- ${w}`))
+    }
+    lines.push('', 'The user sees the screens after reloading the app in Quant-UX. Check a screen with get_screen_handoff.')
+    return result(lines.join('\n'))
   })
 
   return server

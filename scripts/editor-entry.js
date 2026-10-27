@@ -10,3 +10,6 @@ export {
   isTransparentColor, ROLE_USAGE, TOKEN_TYPES
 } from 'core/designtoken/DesignSystem'
 export { getElementGroups } from 'core/designtoken/DesignSystemElements'
+// links the result of HTML2QUX to the design system, like AIController.addAiResult
+export { extract as extractDesignTokens } from 'core/designtoken/DesignTokenExtractor'
+export { COLOR_ROLES, TEXT_ROLES } from 'core/designtoken/DesignSystem'

@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+<head>
+<style>
+  :root { --color-primary: #2563eb; --color-text: #111827; --color-muted: #6b7280; --radius: 8px; }
+  body { margin: 0; font-family: Inter, sans-serif; color: var(--color-text); background: #ffffff; }
+  .page { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+  .logo { width: 48px; height: 48px; }
+  h1 { font-size: 24px; font-weight: 700; margin: 0; }
+  p { font-size: 14px; color: var(--color-muted); margin: 0; }
+  label { font-size: 14px; font-weight: 500; }
+  input { height: 44px; border: 1px solid #d1d5db; border-radius: var(--radius); padding: 0 12px; font-size: 16px; }
+  .button { height: 48px; border-radius: var(--radius); background: var(--color-primary); color: #ffffff; font-size: 16px; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+  .link { color: var(--color-primary); font-size: 14px; text-align: center; }
+</style>
+<script>document.body.innerHTML = 'hacked'</script>
+</head>
+<body>
+  <div class="page">
+    <img class="logo" src="logo.png" alt="Logo">
+    <h1>Welcome back</h1>
+    <p>Log in to your account</p>
+    <label>Email</label>
+    <input type="email" placeholder="you@example.com">
+    <label>Password</label>
+    <input type="password" placeholder="Password">
+    <div class="button" data-link="Home">Log in</div>
+    <div class="link" data-link="Sign up">Create an account</div>
+  </div>
+</body>
+</html>
