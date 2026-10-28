@@ -43,7 +43,7 @@ before(async () => {
       send([{ id: 'a1', name: 'Demo Banking', screenCount: Object.keys(demo.screens).length, type: 'smartphone', permission: 'owner', lastUpdate: 1 }])
     } else if (req.url === '/rest/ai/apps/a1.json') {
       send({ ...demo, id: 'a1', name: 'Demo Banking' })
-    } else if (req.url === '/rest/images/a1/photo123.png') {
+    } else if (req.url === '/rest/ai/apps/a1/images/photo123.png') {
       res.writeHead(200, { 'Content-Type': 'image/png' }).end(PNG)
     } else {
       res.writeHead(404, { 'Content-Type': 'application/json' }).end('{"error":"not_found"}')

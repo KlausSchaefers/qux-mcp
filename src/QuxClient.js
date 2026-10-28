@@ -55,7 +55,7 @@ export class QuxClient {
     if (!match || match[2].includes('..')) {
       throw new ApiError(400, `Not an image of Quant-UX: ${path}`)
     }
-    const res = await this.fetchWithAuth(`/rest/images/${match[1]}/${encodeURIComponent(match[2])}`, 'image/*')
+    const res = await this.fetchWithAuth(`/rest/ai/apps/${match[1]}/images/${encodeURIComponent(match[2])}`, 'image/*')
     if (!res.ok) {
       throw new ApiError(res.status, `Could not load the image ${path} (${res.status})`)
     }
@@ -91,8 +91,8 @@ export class QuxClient {
     }
     const form = new FormData()
     form.append('file', new Blob([data], { type: mimeType }), name)
-    const res = await this.fetchWithAuth(`/rest/images/${encodeURIComponent(appId)}`, 'application/json', { method: 'POST', body: form })
-    const json = await readJson(res, `/rest/images/${appId}`)
+    const res = await this.fetchWithAuth(`/rest/ai/apps/${encodeURIComponent(appId)}/images.json`, 'application/json', { method: 'POST', body: form })
+    const json = await readJson(res, `/rest/ai/apps/${appId}/images.json`)
     const upload = json && json.uploads && json.uploads[0]
     if (!upload || !upload.url) {
       throw new ApiError(400, `Quant-UX did not take the image ${name}, is it a PNG, JPEG, GIF, WEBP or SVG?`)
